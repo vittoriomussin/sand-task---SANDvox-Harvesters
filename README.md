@@ -2,7 +2,7 @@
 
 # Approach to Tasks
 
-**Section 1 of 5**
+**Section 1 of 7**
 
 ## Approach to Tasks
 
@@ -12,7 +12,7 @@ This form serves as a survey to understand the methodological approach to variou
 
 ---
 
-**Section 2 of 5**
+**Section 2 of 7**
 
 ## Output Representation: Training Task Decision
 
@@ -26,7 +26,7 @@ This form serves as a survey to understand the methodological approach to variou
 
 ---
 
-**Section 3 of 5**
+**Section 3 of 7**
 
 ## Model Selection Strategy
 
@@ -53,7 +53,7 @@ This form serves as a survey to understand the methodological approach to variou
 
 ---
 
-**Section 4 of 5**
+**Section 4 of 7**
 
 ## Signal Analysis Methodologies
 
@@ -104,7 +104,7 @@ This section focuses on how we transform the raw audio signal into a representat
 
 ---
 
-**Section 5 of 5**
+**Section 5 of 7**
 
 ## Model Architectures
 
@@ -158,6 +158,113 @@ This section focuses on what type of model to use to process the representations
     - **Lower Interpretability:** The attention weights can give some clues, but in general, they are very complex and difficult to interpret models.
 - [ ] **Other:**
 
+---
+
+**Section 6 of 7**
+
+## Modeling Strategy: Stratified vs. Unified Approach
+
+This final section addresses a critical strategic decision: how to handle the different types of audio recordings in the dataset. The data includes two distinct phonatory tasks: sustained vowel production (**phonation**) and rapid syllable repetition (**rhythm/DDK**). We can either build a single model that processes all audio types together or create specialized models for each task.
+
+- [ ] **Option 1: Unified Model (Single Classifier)**
+    
+    **Description:**
+    
+    This approach involves creating a single, comprehensive model that takes all 8 audio files (5 vowels + 3 DDK tasks) for a given patient as input to produce a single classification. This can be implemented by concatenating all feature sequences into one long sequence, or by using a hierarchical architecture that first processes each file and then aggregates the results before the final prediction. The model is trained to learn a holistic representation of the patient's vocal health from all available evidence.
+    
+    **Advantages:**
+    
+    *   **Holistic Patient View:** The model has the potential to learn complex cross-correlations between different tasks. For example, it might discover that the combination of vocal tremor during phonation and slow rhythm during DDK is a stronger indicator of severe ALS than either feature alone.
+    *   **Maximizes Data Usage:** A single model is exposed to the entire dataset, which can be beneficial for training deep architectures that require more data to generalize well.
+    *   **Simpler Deployment:** The final pipeline is simpler, as there is only one model to train, validate, and deploy.
+    
+    **Disadvantages:**
+    
+    *   **Risk of Contextual Confusion:** This is the most significant drawback. The model may struggle to distinguish between pathological events and expected behavior across different tasks. For example, a moment of silence in a sustained vowel (`/a/`) is a pathological **interruption**, while a moment of silence in a `/pa-pa-pa/` sequence is a necessary part of the consonant **closure**. A single model might confuse these two events, weakening its predictive power.
+    *   **Feature Dilution:** Strong pathological signs present in only one task (e.g., severe interruptions in vowels) might be "averaged out" or diluted by relatively normal performance in the other tasks, leading to a less confident or incorrect final prediction.
+
+- [ ] **Option 2: Stratified Models (Specialized Classifiers)**
+    
+    **Description:**
+    
+    This strategy involves building at least two separate, specialized models:
+    1.  A **Phonation Model**, trained exclusively on the 5 sustained vowel recordings.
+    2.  A **Rhythm/DDK Model**, trained exclusively on the 3 syllable repetition recordings.
+    
+    Each model becomes an expert on its specific task. To get a final classification for a patient, the outputs of these models (e.g., their probability scores for each class) must be combined in a final aggregation step (e.g., through averaging, voting, or a small meta-learning model like logistic regression).
+    
+    **Advantages:**
+    
+    *   **Contextual Specialization:** This is the primary advantage. The Phonation Model learns that any break in periodicity is abnormal (an interruption), while the Rhythm/DDK Model learns that periodic breaks are normal (consonant closures) and instead focuses on their timing and regularity. This eliminates the risk of contextual confusion.
+    *   **Expert Models:** Each model can focus on learning the most relevant patterns for its task. The Phonation Model becomes an expert in detecting **vocal instability** (jitter, shimmer, tremor), while the Rhythm/DDK model becomes an expert in detecting **articulatory incoordination** (slowness, imprecision, irregular rhythm).
+    *   **Targeted Feature Engineering:** This approach allows for the use of a distinct, optimized set of acoustic features for each model, further enhancing their specialization.
+    
+    **Disadvantages:**
+    
+    *   **Increased System Complexity:** The overall pipeline is more complex. It requires training, tuning, and maintaining multiple models, plus an additional aggregation strategy.
+    *   **Information Siloing:** The models are trained independently, so they cannot directly learn the cross-task correlations that a unified model could. The relationship between a patient's stability and agility is only captured at the final, simplistic aggregation stage.
+    *   **Data Fragmentation:** The training data for each model is smaller (5/8 of the data for one, 3/8 for the other). This could be a disadvantage for data-hungry deep learning models, potentially increasing the risk of overfitting on each specialized task.
+
+---
+
+**Section 7 of 7**
+
+## Classification Strategy: One-Step vs. Two-Step Approach
+
+A crucial decision for Task 1 is how to structure the classification problem itself. Given the task involves both identifying pathology (SLA vs. Control) and grading its severity, we can approach this in two distinct ways.
+
+- [ ] **Option 1: One-Step (Direct Multi-Class) Classification**
+
+    **Description:**
+
+    This is the standard and most direct approach. We treat the problem as a single, 5-class classification task where the model is trained to directly predict one of the following labels: `SLA-Severe`, `SLA-Moderate`, `SLA-Mild`, `SLA-NoDysarthria`, or `Healthy-Control`. The model learns a single, shared feature space to distinguish between all five categories simultaneously.
+
+    **Advantages:**
+
+    *   **Simplicity:** This method is straightforward to implement, train, and evaluate. It represents the standard baseline for any multi-class problem.
+    *   **End-to-End Learning:** The model learns a single, holistic mapping from input features to the final output. It has the potential to discover complex, non-linear relationships and boundaries between all five classes that a two-step process might miss.
+    *   **Unified Feature Space:** The model is forced to learn features that are useful for both pathology detection and severity grading at the same time, which could lead to a more robust and generalized representation.
+
+    **Disadvantages:**
+
+    *   **High Sensitivity to Class Imbalance:** This is the most significant risk. The dataset is highly imbalanced, with the `Healthy-Control` class being the largest and `SLA-Severe` being extremely rare (2.2%). A single model can easily become biased towards the majority classes, effectively ignoring the minority classes and leading to poor F1-scores.
+    *   **Conflicting Learning Objectives:** The model must simultaneously learn to solve two conceptually different problems: a binary one (healthy vs. pathological) and an ordinal one (grading severity). The features that best separate `Healthy` from `SLA-NoDysarthria` might be very subtle and different from the features that separate `SLA-Mild` from `SLA-Severe`. Forcing a single model to learn both might lead to suboptimal performance.
+
+- [ ] **Option 2: Two-Step (Hierarchical) Classification**
+
+    **Description:**
+
+    This "divide and conquer" strategy breaks the problem into a two-stage pipeline:
+    1.  **Stage 1 - Pathology Detector:** A binary classification model is trained to distinguish `SLA` (all severities combined) from `Healthy-Control`. Its sole purpose is to answer the question: "Is this patient healthy or do they have ALS?"
+    2.  **Stage 2 - Severity Grader:** A second, separate 4-class model is trained **only on the SLA patient data**. Its purpose is to take a sample identified as `SLA` by the first model and assign a severity level: `Severe`, `Moderate`, `Mild`, or `NoDysarthria`.
+
+    During inference, a new sample is first passed through the Stage 1 model. If classified as `Healthy-Control`, the process stops. If classified as `SLA`, it is then passed to the Stage 2 model for severity grading.
+
+    **Advantages:**
+
+    *   **Mitigates Class Imbalance:** The first model tackles a more balanced binary problem. Crucially, the second model is trained on a dataset where the rare `SLA-Severe` class is no longer overshadowed by the massive `Healthy-Control` class, giving it a much better chance to learn its characteristics.
+    *   **Specialized "Expert" Models:** Each model can focus on learning the most relevant features for its simpler, more targeted task. The "Pathology Detector" can focus on the subtle onset of the disease, while the "Severity Grader" can focus on features that quantify its progression.
+    *   **Potential for Higher Performance on Rare Classes:** By isolating the severity grading task, the model has a better opportunity to correctly classify the most severe (and clinically critical) cases.
+
+    **Disadvantages:**
+
+    *   **Error Propagation:** This is the primary drawback. If the Stage 1 model incorrectly classifies an ALS patient as healthy (a False Negative), the error is final and catastrophic for that sample. The Stage 2 model never gets a chance to see it. The overall system's performance is capped by the performance of the first stage.
+    *   **Increased Complexity:** The pipeline is more complex to implement, train, tune, and maintain. It involves two separate models and the logic to connect them.
+    *   **Data Fragmentation:** The Stage 2 model is trained on a smaller subset of the data (only the ALS patients). For data-hungry deep learning architectures, this could increase the risk of overfitting on the severity grading task.
+
+---
+---
+
+### Team Methodological Choices Survey
+
+| Team Member | Output Representation (Sec 2) | Model Selection (Sec 3) | Signal Analysis (Sec 4) | Model Architectures (Sec 5) | Modeling Strategy (Sec 6) | Classification Strategy (Sec7) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Vittorio** | [ ] Multiclass Classification<br>[X] Discrete Regression | [X] K-Fold Cross-Validation<br> [ ] Training-Validation-Test | [ ] Spectrogram Analysis<br>[X] Acoustic-Phonetic Features<br>[X] End-to-End | [ ] Static Input<br>[X] Recurrent Models<br>[X] Transformers | [ ] Unified Model<br>[X] Stratified Models | [ ] One-Step (Direct Multi-Class) Classification <br> [X] Two-Step (Hierarchical) Classification |
+| **Adriano** | [ ] Multiclass Classification<br>[ ] Discrete Regression | [ ] K-Fold Cross-Validation<br> [ ] Training-Validation-Test | [ ] Spectrogram Analysis<br>[ ] Acoustic-Phonetic Features<br>[ ] End-to-End | [ ] Static Input<br>[ ] Recurrent Models<br>[ ] Transformers | [ ] Unified Model<br>[ ] Stratified Models |[ ] One-Step (Direct Multi-Class) Classification <br> [ ] Two-Step (Hierarchical) Classification |
+| **Giacomo** | [ ] Multiclass Classification<br>[ ] Discrete Regression | [ ] K-Fold Cross-Validation<br> [ ] Training-Validation-Test | [ ] Spectrogram Analysis<br>[ ] Acoustic-Phonetic Features<br>[ ] End-to-End | [ ] Static Input<br>[ ] Recurrent Models<br>[ ] Transformers | [ ] Unified Model<br>[ ] Stratified Models |[ ] One-Step (Direct Multi-Class) Classification <br> [ ] Two-Step (Hierarchical) Classification |
+
+---
+---
 
 # Spectrographic Analysis of Vocal Biomarkers in ALS
 
@@ -203,7 +310,7 @@ The following sections detail distinct phenomena visible in the spectrograms of 
 -   **Clinical Meaning:** This indicates a loss of periodic glottal closure over time. As the speaker fatigues, the vocal folds no longer close completely during each cycle, allowing turbulent air to escape. This introduces noise (breathiness or hoarseness) into the signal and is a key indicator of **reduced vocal endurance**.
 
 ## From Visual Patterns to Model Interpretation
-**@V.M** : The following section assumes the choice of **Option 2: Acoustic-Phonetic Feature Engineering** from **Section 4 of 5** : *Signal Analysis Methodologies* and **Option 2: Recurrent Models for Dynamic Input** / **Option 3: Transformer-based Models** from **Section 5 of 5** *Model Architectures*
+**@V.M** : The following section assumes the choice of **Option 2: Acoustic-Phonetic Feature Engineering** from **Section 4 of 7** : *Signal Analysis Methodologies* and **Option 2: Recurrent Models for Dynamic Input** / **Option 3: Transformer-based Models** from **Section 5 of 7** *Model Architectures*
 
 
 The dynamic and time-dependent nature of these vocal deficits makes recurrent models (like LSTMs or GRUs) an ideal choice for classification. Such models can learn to recognize these patterns by processing a sequence of acoustic feature vectors extracted from short, overlapping time frames (e.g., 15ms).
