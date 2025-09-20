@@ -157,3 +157,62 @@ This section focuses on what type of model to use to process the representations
     - **Quadratic Complexity:** The computational and memory cost grows with the square of the sequence length, which can be a problem for very long audio signals without the use of more efficient variants of the architecture.
     - **Lower Interpretability:** The attention weights can give some clues, but in general, they are very complex and difficult to interpret models.
 - [ ] **Other:**
+
+
+# Spectrographic Analysis of Vocal Biomarkers in ALS
+
+This document provides a comparative analysis of spectrograms from patients with Amyotrophic Lateral Sclerosis (ALS) and a healthy control group. The goal is to identify key visual patterns that correspond to specific vocal deficits and to outline how these patterns can be captured by acoustic features and interpreted by sequential machine learning models.
+
+## Analysis of Spectrogram Patterns
+
+The following sections detail distinct phenomena visible in the spectrograms of ALS patients, contrasting them with the stability observed in the control group.
+
+### Control Group: Stable and Sustained Phonation
+
+![Control Group Spectrograms](./images/control_group.png)
+
+-   **Description:** The spectrograms of the control group show harmonic structures (the bright horizontal lines) that are remarkably **straight, parallel, and well-defined**. The vocal emission is sustained for a long duration (15-20+ seconds) without any significant degradation in quality.
+-   **Clinical Meaning:** This represents a healthy phonatory system with excellent neuromuscular control over the larynx and consistent respiratory support. The speaker can maintain a stable pitch and a clear, periodic vocal fold vibration over an extended period.
+
+### ALS Patient 1: Frequency Drift
+
+![Frequency Drift Spectrogram](./images/frequency_drift.png)
+
+-   **Description:** The harmonic lines are not flat but exhibit a slow, consistent **downward curve** over the duration of the utterance. The fundamental frequency (the lowest bright line) is noticeably higher at the beginning than at the end.
+-   **Clinical Meaning:** This pattern is a classic sign of **muscular fatigue**. The speaker is unable to maintain the necessary laryngeal muscle tension and respiratory support to sustain a constant pitch, resulting in a gradual drop. This is a **long-term instability pattern**.
+
+### ALS Patient 2: Irregular Frequency Oscillations
+
+![Irregular Oscillations Spectrogram](./images/irregular_oscillations.png)
+
+-   **Description:** Instead of being smooth lines, the harmonics appear "wavy," "shaky," or tremulous. These oscillations are rapid and irregular.
+-   **Clinical Meaning:** This is a visual representation of **vocal tremor**. It indicates short-term instability in the neuromuscular control of the larynx, causing rapid, involuntary fluctuations in pitch.
+
+### ALS Patient 3: Occasional Interruptions
+
+![Interruptions Spectrogram](./images/interruptions.png)
+
+-   **Description:** The spectrogram shows distinct **vertical gaps or breaks** where the harmonic structure completely disappears for brief moments before resuming.
+-   **Clinical Meaning:** These are phonatory arrests or voice breaks. They represent a momentary failure to maintain vocal fold vibration, often caused by laryngeal spasms or a sudden lack of respiratory drive. These are discrete, event-based phenomena.
+
+### ALS Patient 4: Reduced Definition Towards the End
+
+![Reduced Definition Spectrogram](./images/reduced_definition.png)
+
+-   **Description:** The vocal emission begins with relatively clear harmonics, but towards the beginning and end of the phonation, the structure degrades. The clean lines blur into a more **noisy, chaotic, and less-defined** area of energy.
+-   **Clinical Meaning:** This indicates a loss of periodic glottal closure over time. As the speaker fatigues, the vocal folds no longer close completely during each cycle, allowing turbulent air to escape. This introduces noise (breathiness or hoarseness) into the signal and is a key indicator of **reduced vocal endurance**.
+
+## From Visual Patterns to Model Interpretation
+**@V.M** : The following section assumes the choice of **Option 2: Acoustic-Phonetic Feature Engineering** from **Section 4 of 5** : *Signal Analysis Methodologies* and **Option 2: Recurrent Models for Dynamic Input** / **Option 3: Transformer-based Models** from **Section 5 of 5** *Model Architectures*
+
+
+The dynamic and time-dependent nature of these vocal deficits makes recurrent models (like LSTMs or GRUs) an ideal choice for classification. Such models can learn to recognize these patterns by processing a sequence of acoustic feature vectors extracted from short, overlapping time frames (e.g., 15ms).
+
+The following table maps the visual phenomena to the specific acoustic features that can quantify them and explains how a recurrent model would interpret the resulting feature sequence.
+
+| Visual Phenomenon in Spectrogram | Corresponding Acoustic Features (per 15ms frame) | How a Recurrent Model Interprets It |
+| :--- | :--- | :--- |
+| **Frequency Drift** | **F0 (Fundamental Frequency):** The sequence of F0 values extracted frame-by-frame will show a consistent decreasing trend. | The LSTM's memory allows it to recognize this slow-moving, long-term trend across hundreds of time steps as a key discriminatory feature. |
+| **Irregular Oscillations** | **Jitter & Shimmer:** These are the precise numerical descriptors for this phenomenon. Frame-by-frame values for Jitter (frequency perturbation) and Shimmer (amplitude perturbation) will be consistently high and variable. | The model learns that a sequence characterized by high-variance, high-magnitude Jitter and Shimmer values is a strong indicator of pathology. |
+| **Reduced Definition / Noise** | **Harmonic-to-Noise Ratio (HNR):** This feature will have a high value in clean segments and a low value in noisy segments. **MFCCs:** The spectral energy distribution will change significantly, making the MFCC vectors of noisy frames distinct from those of harmonic frames. | The model learns to recognize the **state transition** in the feature space (e.g., from high HNR to low HNR) as a pattern of vocal fatigue and breakdown. |
+| **Occasional Interruptions** | **RMS Energy:** The energy value will drop to near-zero during the break. **Voicing Probability:** A feature indicating if a frame is voiced will switch from `1 -> 0 -> 1`. **F0:** Will become undefined during the unvoiced segment. | A recurrent model excels at identifying these state-change patterns (`voiced -> unvoiced -> voiced`). It can learn to count the frequency and duration of these events within an utterance. |
