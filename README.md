@@ -1,4 +1,24 @@
-[Link to the original form](https://docs.google.com/forms/d/e/1FAIpQLScZf58XZCZqFyKX8zwqslpYA3OD0OpQ8PJ9HOXX_nGUuT7U6w/viewform?usp=dialog)
+# SpeechBrain Guides
+
+[SpeechBrain Guides](https://speechbrain.readthedocs.io/en/latest/)
+
+## Tutorial notebooks
+
+- [SpeechBrain Basics](https://speechbrain.readthedocs.io/en/latest/tutorials/basics.html)
+- [SpeechBrain Advanced](https://speechbrain.readthedocs.io/en/latest/tutorials/advanced.html)
+- [Speech Preprocessing](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing.html)
+  - [Speech Augmentation](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing/speech-augmentation.html)
+  - [Fourier Transforms and Spectrograms](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing/fourier-transform-and-spectrograms.html)
+  - [Speech Features](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing/speech-features.html)
+  - [Environmental Corruption](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing/environmental-corruption.html)
+  - [Multi-microphone Beamforming](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing/multi-microphone-beamforming.html)
+  - [**Analyzing Vocal Features for Pathology**](https://speechbrain.readthedocs.io/en/latest/tutorials/preprocessing/voice-analysis.html)
+- [Speech Processing Tasks](https://speechbrain.readthedocs.io/en/latest/tutorials/tasks.html)
+- [Neural Architectures](https://speechbrain.readthedocs.io/en/latest/tutorials/nn.html)
+
+## Tips & tricks
+- [Audio loading troubleshooting](https://speechbrain.readthedocs.io/en/latest/audioloading.html)
+- [Basics of multi-GPU](https://speechbrain.readthedocs.io/en/latest/multigpu.html)
 
 # Approach to Tasks
 
