@@ -1,0 +1,9 @@
+speechbrain
+pandas
+openpyxl
+praat-parselmouth
+scipy
+librosa
+hyperpyyaml
+stopit
+numpy<2.0

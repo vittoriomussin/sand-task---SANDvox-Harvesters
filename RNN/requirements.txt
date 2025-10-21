@@ -1,0 +1,18 @@
+# File delle dipendenze per il progetto RNN di analisi vocale
+
+# Libreria principale per il deep learning audio
+speechbrain
+
+# Per la lettura e manipolazione dei file Excel
+pandas
+openpyxl # Necessario a pandas per leggere i file .xlsx
+
+# Per l'estrazione delle feature patologiche (Praat)
+praat-parselmouth
+
+# Per calcoli scientifici e analisi del segnale
+scipy
+librosa
+
+# Per caricare i file di configurazione in formato HyperPyYAML
+hyperpyyaml

@@ -1,0 +1,104 @@
+# hparams.yaml
+# File di configurazione centrale per l'esperimento di analisi della voce patologica.
+
+#===============================================================================
+# Percorsi e Configurazione Generale
+#===============================================================================
+data_folder: 'sample_data'
+excel_file: 'metadata.xlsx'
+json_data_file: 'RNN/data.json'
+output_folder: './results'
+task_type: 'classification'
+sample_rate: 16000
+
+#===============================================================================
+# 1. PREPROCESSING
+#===============================================================================
+vad_threshold_db: -40
+vad_frame_length_ms: 30
+vad_hop_length_ms: 10
+min_speech_duration_s: 0.1
+min_silence_duration_s: 0.5
+target_loudness_dbfs: -25
+noise_data_folder: null
+reverb_data_folder: null
+noise_prob: 1.0
+reverb_prob: 1.0
+noise_snr_low_db: 5
+noise_snr_high_db: 20
+rir_scale_factor: 1.0
+
+#===============================================================================
+# 2. FEATURE EXTRACTION
+#===============================================================================
+min_f0_hz: 75
+max_f0_hz: 300
+praat_window_size_s: 0.05
+praat_step_size_s: 0.01
+praat_num_peaks: 5
+gne_lpc_order: 13
+gne_bandwidth_hz: 1000
+gne_fshift_hz: 300
+gne_resample_rate: 10000
+
+#===============================================================================
+# Architettura del Modello
+#===============================================================================
+rnn_type: 'LSTM'
+input_size: 5
+hidden_size: 128
+num_layers: 2
+bidirectional: True
+rnn_dropout: 0.2
+num_classes: 6
+
+#===============================================================================
+# Parametri di Training
+#===============================================================================
+epochs: 50
+batch_size: 32
+learning_rate: 0.001
+optimizer: adam
+
+#===============================================================================
+# Componenti SpeechBrain
+#===============================================================================
+checkpointer: !new:speechbrain.utils.checkpoints.Checkpointer
+  checkpoints_dir: !ref <output_folder>/save
+  recoverables:
+    model: !ref <model>
+
+modules:
+  model: !ref <model>
+
+model: !new:model.PathoVoiceRNN
+  rnn_type: !ref <rnn_type>
+  input_size: !ref <input_size>
+  hidden_size: !ref <hidden_size>
+  num_layers: !ref <num_layers>
+  bidirectional: !ref <bidirectional>
+  rnn_dropout: !ref <rnn_dropout>
+  task_type: !ref <task_type>
+  num_classes: !ref <num_classes>
+
+preprocessing_chain: !new:processing.PreprocessingChain
+  sample_rate: !ref <sample_rate>
+  vad_threshold_db: !ref <vad_threshold_db>
+  vad_frame_length_ms: !ref <vad_frame_length_ms>
+  vad_hop_length_ms: !ref <vad_hop_length_ms>
+  noise_data_folder: !ref <noise_data_folder>
+  noise_snr_low_db: !ref <noise_snr_low_db>
+  noise_snr_high_db: !ref <noise_snr_high_db>
+  reverb_data_folder: !ref <reverb_data_folder>
+
+feature_extractor: !new:features.PathologyFeatureExtractor
+  sample_rate: !ref <sample_rate>
+  praat_step_size_s: !ref <praat_step_size_s>
+  min_f0_hz: !ref <min_f0_hz>
+  max_f0_hz: !ref <max_f0_hz>
+  gne_resample_rate: !ref <gne_resample_rate>
+  gne_lpc_order: !ref <gne_lpc_order>
+
+dataio_prepare_fn: !py
+  module: dataio
+  class: dataio_prepare
