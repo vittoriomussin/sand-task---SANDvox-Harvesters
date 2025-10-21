@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-from RNN.speech_processor import SpeechProcessor
+from .speech_processor import SpeechProcessor
 
 class AudioDataset(Dataset):
     def __init__(self, manifest_file, speech_processor, target_column, task_type='classification', augment=True):

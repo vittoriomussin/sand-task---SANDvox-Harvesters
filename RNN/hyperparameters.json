@@ -39,5 +39,16 @@
       "fshift_hz": 300,
       "new_sample_rate_hz": 10000
     }
+  },
+  "model_params": {
+    "rnn_type": "LSTM",
+    "hidden_size": 128,
+    "num_layers": 2,
+    "input_size": 5
+  },
+  "training_params": {
+    "learning_rate": 0.001,
+    "batch_size": 16,
+    "num_epochs": 20
   }
 }

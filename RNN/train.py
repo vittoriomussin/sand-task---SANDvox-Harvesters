@@ -7,18 +7,10 @@ import os
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error
 
-from RNN.speech_processor import SpeechProcessor
-from RNN.dataset import AudioDataset, pad_collate
-from RNN.model import SimpleRNN
-
-# --- Configuration ---
-# Model parameters - could be moved to a config file or args
-INPUT_SIZE = 5  # f0, jitter, shimmer, hnr, gne
-HIDDEN_SIZE = 128
-NUM_LAYERS = 2
-LEARNING_RATE = 0.001
-BATCH_SIZE = 16
-NUM_EPOCHS = 10 # For demonstration; should be higher for real training
+from .speech_processor import SpeechProcessor
+from .dataset import AudioDataset, pad_collate
+from .model import SimpleRNN
+import json
 
 def train(model, train_loader, criterion, optimizer, device):
     """Handles the training loop for one epoch."""
@@ -82,6 +74,13 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
+    # Load hyperparameters
+    with open(args.hyperparams_file, 'r') as f:
+        hparams = json.load(f)
+
+    model_params = hparams["model_params"]
+    training_params = hparams["training_params"]
+
     # Initialize speech processor
     processor = SpeechProcessor(args.hyperparams_file)
 
@@ -101,8 +100,8 @@ def main(args):
         augment=False
     )
 
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate)
-    valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False, collate_fn=pad_collate)
+    train_loader = DataLoader(train_dataset, batch_size=training_params["batch_size"], shuffle=True, collate_fn=pad_collate)
+    valid_loader = DataLoader(valid_dataset, batch_size=training_params["batch_size"], shuffle=False, collate_fn=pad_collate)
 
     # --- Model, Criterion, Optimizer ---
     if args.task_type == 'classification':
@@ -116,18 +115,26 @@ def main(args):
         criterion = nn.MSELoss()
         best_metric = float('inf') # We want to minimize loss/MAE
 
-    model = SimpleRNN(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, output_size, args.task_type).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    model = SimpleRNN(
+        input_size=model_params["input_size"],
+        hidden_size=model_params["hidden_size"],
+        num_layers=model_params["num_layers"],
+        output_size=output_size,
+        rnn_type=model_params["rnn_type"],
+        task_type=args.task_type
+    ).to(device)
+
+    optimizer = optim.Adam(model.parameters(), lr=training_params["learning_rate"])
 
     print(f"Starting training for {args.task_type} on target '{args.target_column}'...")
 
     # --- Training Loop ---
-    for epoch in range(NUM_EPOCHS):
+    for epoch in range(training_params["num_epochs"]):
         train_loss = train(model, train_loader, criterion, optimizer, device)
 
         if args.task_type == 'classification':
             valid_loss, valid_acc, valid_f1 = evaluate(model, valid_loader, criterion, args.task_type, device)
-            print(f"Epoch [{epoch+1}/{NUM_EPOCHS}], Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Valid Acc: {valid_acc:.4f}, Valid F1: {valid_f1:.4f}")
+            print(f"Epoch [{epoch+1}/{training_params['num_epochs']}], Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Valid Acc: {valid_acc:.4f}, Valid F1: {valid_f1:.4f}")
 
             # Save the best model based on F1 score
             if valid_f1 > best_metric:
@@ -136,7 +143,7 @@ def main(args):
                 print("New best model saved.")
         else: # regression
             valid_loss, valid_mae = evaluate(model, valid_loader, criterion, args.task_type, device)
-            print(f"Epoch [{epoch+1}/{NUM_EPOCHS}], Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Valid MAE: {valid_mae:.4f}")
+            print(f"Epoch [{epoch+1}/{training_params['num_epochs']}], Train Loss: {train_loss:.4f}, Valid Loss: {valid_loss:.4f}, Valid MAE: {valid_mae:.4f}")
 
             # Save the best model based on MAE
             if valid_mae < best_metric:
