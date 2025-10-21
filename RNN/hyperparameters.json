@@ -1,0 +1,43 @@
+{
+  "preprocessing": {
+    "vad": {
+      "threshold_db": -40,
+      "frame_length_ms": 30,
+      "hop_length_ms": 10,
+      "min_speech_duration_s": 0.1,
+      "min_silence_duration_s": 0.5
+    },
+    "loudness_normalization": {
+      "target_dbfs": -25
+    }
+  },
+  "augmentation": {
+    "environmental_corruption": {
+      "noise_prob": 1.0,
+      "reverb_prob": 1.0,
+      "babble_prob": 0.0,
+      "noise_snr_low_db": 5,
+      "noise_snr_high_db": 20,
+      "rir_scale_factor": 1.0
+    }
+  },
+  "feature_extraction": {
+    "pathological_features": {
+      "f0": {
+        "min_f0_hz": 75,
+        "max_f0_hz": 300
+      },
+      "jitter_shimmer": {
+        "window_size_s": 0.05,
+        "step_size_s": 0.01,
+        "num_peaks": 5
+      }
+    },
+    "gne": {
+      "lpc_order": 13,
+      "bandwidth_hz": 1000,
+      "fshift_hz": 300,
+      "new_sample_rate_hz": 10000
+    }
+  }
+}

@@ -1,0 +1,8 @@
+torch==2.2.0
+torchaudio==2.2.0
+speechbrain==1.0.3
+pandas==2.3.3
+scikit-learn==1.7.2
+praat-parselmouth==0.4.6
+librosa==0.11.0
+pysptk==1.0.1
